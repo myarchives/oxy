@@ -62,10 +62,10 @@ func RoundTripper(r http.RoundTripper) optSetter {
 	}
 }
 
-// WebsocketDialer sets a new WS dialer
-func WebsocketDialer(r func(network, addr string) (net.Conn, error)) optSetter {
+// WebsocketRoundTripper sets a new WS dialer
+func WebsocketRoundTripper(r *http.Transport) optSetter {
 	return func(f *Forwarder) error {
-		f.httpForwarder.NetDialer = r
+		f.httpForwarder.NetDialer = r.Dial
 		return nil
 	}
 }
