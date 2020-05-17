@@ -62,6 +62,14 @@ func RoundTripper(r http.RoundTripper) optSetter {
 	}
 }
 
+// WebsocketDialer sets a new WS dialer
+func WebsocketDialer(r func(network, addr string) (net.Conn, error)) optSetter {
+	return func(f *Forwarder) error {
+		f.httpForwarder.NetDialer = r
+		return nil
+	}
+}
+
 // Rewriter defines a request rewriter for the HTTP forwarder
 func Rewriter(r ReqRewriter) optSetter {
 	return func(f *Forwarder) error {
@@ -201,6 +209,7 @@ type httpForwarder struct {
 
 	bufferPool                    httputil.BufferPool
 	websocketConnectionClosedHook func(req *http.Request, conn net.Conn)
+	NetDialer                     func(network, addr string) (net.Conn, error)
 }
 
 const defaultFlushInterval = time.Duration(100) * time.Millisecond
@@ -338,6 +347,7 @@ func (f *httpForwarder) serveWebSocket(w http.ResponseWriter, req *http.Request,
 	outReq := f.copyWebSocketRequest(req)
 
 	dialer := websocket.DefaultDialer
+	dialer.NetDial = f.NetDialer
 
 	if outReq.URL.Scheme == "wss" && f.tlsClientConfig != nil {
 		dialer.TLSClientConfig = f.tlsClientConfig.Clone()
